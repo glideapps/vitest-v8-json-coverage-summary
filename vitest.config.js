@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import V8JSONSummaryReporter from "./src/v8.json.summary.reporter";
 
 export default defineConfig({
   test: {
@@ -7,5 +8,6 @@ export default defineConfig({
       reporter: ["text", "json"],
       reportsDirectory: "./coverage",
     },
+    reporters: ["default", new V8JSONSummaryReporter()],
   },
 });

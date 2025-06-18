@@ -4,8 +4,7 @@
   "description": "A plugin for vitest that generates a coverage summary in json format",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "coverage": "vitest run --coverage"
+    "test": "vitest run --coverage"
   },
   "author": "Typeguard Inc.",
   "license": "MIT",
