@@ -1,0 +1,57 @@
+name: Create release from version bump
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Extract version from tag
+        id: version_extract
+        run: |
+          # Remove 'v' prefix from tag name to get version
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "NEW_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION"
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+          --repo="${{ github.repository }}" \
+          --title="Release ${{ github.ref_name }}" \
+          --generate-notes
+
+  publish-npm:
+    name: Publish to NPM
+    needs: create-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: https://registry.npmjs.org
+      - run: |
+          npm ci
+          npm run build
+          npm publish --registry=https://registry.npmjs.org
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GLIDE_ORG_NPM_TOKEN}}
