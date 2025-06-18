@@ -1,0 +1,34 @@
+# Source files
+src/
+test-src/
+
+# Configuration files
+vitest.config.js
+tsconfig.json
+.npmignore
+
+# Development files
+.git/
+.gitignore
+
+# Test coverage
+coverage/
+
+# Node modules
+node_modules/
+
+# Package lock
+package-lock.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files in dist
+dist/*.test.* 
