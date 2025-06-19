@@ -1,21 +1,15 @@
 {
   "name": "@glideapps/vitest-v8-json-coverage-summary",
-  "version": "0.0.0-india",
+  "version": "0.0.0-papa",
   "description": "A plugin for vitest that generates a coverage summary in json format",
   "main": "index.js",
   "types": "dist/v8.json.summary.reporter.d.ts",
-  "exports": {
-    ".": {
-      "import": "./index.js",
-      "types": "./dist/v8.json.summary.reporter.d.ts"
-    }
-  },
   "files": [
     "dist/v8.json.summary.reporter.js",
     "dist/v8.json.summary.reporter.d.ts",
     "dist/v8.json.summary.reporter.js.map",
     "dist/v8.json.summary.reporter.d.ts.map",
-    "action.js",
+    "github-action/action.js",
     "index.js",
     "action.yml",
     "example-workflow.yml",
