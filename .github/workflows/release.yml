@@ -31,10 +31,34 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "Debug information:"
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_REF_NAME: ${{ github.ref_name }}"
+          echo "GITHUB_REPOSITORY: ${{ github.repository }}"
+
+          # List all tags to see what exists
+          echo "Available tags:"
+          git tag -l
+
+          # Check if the specific tag exists
+          if git rev-parse "${{ github.ref_name }}" >/dev/null 2>&1; then
+            echo "Tag ${{ github.ref_name }} exists in git"
+          else
+            echo "Tag ${{ github.ref_name }} does NOT exist in git"
+          fi
+
+          # Try to create release with more verbose output
+          echo "Attempting to create release..."
           gh release create "${{ github.ref_name }}" \
-          --repo="${{ github.repository }}" \
-          --title="Release ${{ github.ref_name }}" \
-          --generate-notes
+            --repo="${{ github.repository }}" \
+            --title="Release ${{ github.ref_name }}" \
+            --generate-notes \
+            --verbose || {
+            echo "Release creation failed with exit code $?"
+            echo "Trying to get more details about existing releases..."
+            gh release list --repo="${{ github.repository }}" --limit=10
+            exit 1
+          }
 
   publish-npm:
     name: Publish to NPM
