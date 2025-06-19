@@ -1,4 +1,4 @@
-name: Create release from version bump
+name: Publish to NPM on Release
 
 on:
   push:
@@ -6,67 +6,13 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
+  packages: write
 
 jobs:
-  create-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Extract version from tag
-        id: version_extract
-        run: |
-          # Remove 'v' prefix from tag name to get version
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "NEW_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Extracted version: $VERSION"
-
-      - name: Create Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Debug information:"
-          echo "GITHUB_REF: $GITHUB_REF"
-          echo "GITHUB_REF_NAME: ${{ github.ref_name }}"
-          echo "GITHUB_REPOSITORY: ${{ github.repository }}"
-
-          # List all tags to see what exists
-          echo "Available tags:"
-          git tag -l
-
-          # Check if the specific tag exists
-          if git rev-parse "${{ github.ref_name }}" >/dev/null 2>&1; then
-            echo "Tag ${{ github.ref_name }} exists in git"
-          else
-            echo "Tag ${{ github.ref_name }} does NOT exist in git"
-          fi
-
-          # Try to create release with more verbose output
-          echo "Attempting to create release..."
-          gh release create "${{ github.ref_name }}" \
-            --repo="${{ github.repository }}" \
-            --title="Release ${{ github.ref_name }}" \
-            --generate-notes \
-            --verbose || {
-            echo "Release creation failed with exit code $?"
-            echo "Trying to get more details about existing releases..."
-            gh release list --repo="${{ github.repository }}" --limit=10
-            exit 1
-          }
-
   publish-npm:
     name: Publish to NPM
-    needs: create-release
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
