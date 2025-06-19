@@ -123,7 +123,9 @@ async function run(): Promise<void> {
     // Read coverage file
     const coverageFilePath = path.resolve(coverageFile);
     if (!fs.existsSync(coverageFilePath)) {
-      core.setFailed(`Coverage file not found: ${coverageFilePath}`);
+      core.setFailed(
+        `coverage-summary.json file not found at path ${coverageFilePath}. Did you forget to add the reporter in your vitest.config.js?`
+      );
       return;
     }
 
