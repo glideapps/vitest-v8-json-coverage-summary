@@ -1,0 +1,36 @@
+name: Coverage Report
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test-and-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm test
+
+      - name: Report Coverage
+        uses: glideapps/vitest-coverage-tools@v1
+        with:
+          coverage-file: "coverage/coverage-summary.json"
+          title: "🧪 Test Coverage Report"
+          show-files: "true"
+          coverage-threshold: "80"

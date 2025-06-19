@@ -9,12 +9,43 @@ A plugin for [Vitest](https://vitest.dev/) that generates a structured JSON cove
 - ✅ Includes file-level and overall coverage statistics
 - ✅ Tracks uncovered lines for detailed analysis
 - ✅ Compatible with Vitest 3.0+
+- 🚀 **NEW**: GitHub Action for automatic PR coverage reporting
 
 ## Installation
 
 ```bash
 npm install --save-dev vitest-v8-json-coverage-summary
 ```
+
+## GitHub Action
+
+This package also includes a GitHub Action that automatically creates beautiful coverage reports in pull requests.
+
+### Quick Start
+
+```yaml
+name: Coverage Report
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npm test
+      - uses: glideapps/vitest-coverage-tools@v1
+```
+
+For detailed documentation, see [ACTION_README.md](ACTION_README.md).
 
 ## Usage
 

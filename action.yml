@@ -1,0 +1,32 @@
+name: "Vitest Coverage Reporter"
+description: "Creates a coverage report comment in pull requests using vitest coverage data"
+author: "Glide Apps"
+branding:
+  icon: "bar-chart"
+  color: "blue"
+
+inputs:
+  coverage-file:
+    description: "Path to the coverage summary JSON file"
+    required: false
+    default: "coverage/coverage-summary.json"
+  token:
+    description: "GitHub token for creating comments"
+    required: false
+    default: "${{ github.token }}"
+  title:
+    description: "Title for the coverage report comment"
+    required: false
+    default: "📊 Coverage Report"
+  show-files:
+    description: "Whether to show individual file coverage details"
+    required: false
+    default: "true"
+  coverage-threshold:
+    description: "Minimum coverage percentage to consider as good (0-100)"
+    required: false
+    default: "80"
+
+runs:
+  using: "node20"
+  main: "dist/action.js"
