@@ -28,7 +28,7 @@ jobs:
         run: npm test
 
       - name: Report Coverage
-        uses: glideapps/vitest-coverage-tools@v1
+        uses: glideapps/vitest-v8-json-coverage-summary@v1
         with:
           coverage-file: "coverage/coverage-summary.json"
           title: "🧪 Test Coverage Report"

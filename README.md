@@ -42,7 +42,7 @@ jobs:
           node-version: "20"
       - run: npm ci
       - run: npm test
-      - uses: glideapps/vitest-coverage-tools@v1
+      - uses: glideapps/vitest-v8-json-coverage-summary@v1
 ```
 
 For detailed documentation, see [ACTION_README.md](ACTION_README.md).
