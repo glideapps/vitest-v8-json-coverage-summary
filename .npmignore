@@ -33,7 +33,6 @@ Thumbs.db
 # Test files in dist
 dist/*.test.* 
 
-# GitHub Action files (keep these)
+# GitHub Action files (keep these in repo for GitHub Actions)
 # action.yml
-# dist/action.js
-# dist/action.d.ts 
+# dist-action/index.js 
