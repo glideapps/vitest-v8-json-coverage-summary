@@ -1,5 +1,5 @@
 {
-  "name": "vitest-v8-json-coverage-summary",
+  "name": "@glideapps/vitest-v8-json-coverage-summary",
   "version": "0.0.0-beta",
   "description": "A plugin for vitest that generates a coverage summary in json format",
   "type": "module",
