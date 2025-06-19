@@ -23,4 +23,3 @@ declare class V8JSONSummaryReporter implements Reporter {
 }
 export default V8JSONSummaryReporter;
 export declare function generateV8CoverageSummary(coverage: any): CoverageSummary;
-//# sourceMappingURL=v8.json.summary.reporter.d.ts.map
