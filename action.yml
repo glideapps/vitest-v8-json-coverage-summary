@@ -138,15 +138,17 @@ runs:
           cp -r badges /tmp/badges-backup
           git checkout --orphan ${{ inputs.pages-branch }}
           git rm -rf . || true
-          # Restore badges after cleanup
-          cp -r /tmp/badges-backup badges
         fi
 
-        # Create the badges directory
+        # Create the badges directory for pages
         mkdir -p ${{ inputs.pages-badges-dir }}
 
-        # Copy badges to the pages branch
-        cp badges/*.json ${{ inputs.pages-badges-dir }}/
+        # Copy badges to the pages directory from backup or current location
+        if [ -d "/tmp/badges-backup" ]; then
+          cp /tmp/badges-backup/*.json ${{ inputs.pages-badges-dir }}/
+        else
+          cp badges/*.json ${{ inputs.pages-badges-dir }}/
+        fi
         echo "📋 Copied badges to ${{ inputs.pages-badges-dir }}/"
 
         # Check if there are changes to commit
