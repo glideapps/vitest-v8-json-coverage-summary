@@ -1,12 +1,12 @@
-name: Coverage Report with Badges
+name: Coverage Report with Automatic Badge Upload
 
 on:
   pull_request:
     branches: [main, develop]
 
 permissions:
-  contents: read
   pull-requests: write
+  contents: write # Required for GitHub Pages upload
 
 jobs:
   test-and-coverage:
@@ -27,7 +27,7 @@ jobs:
       - name: Run tests with coverage
         run: npm test
 
-      - name: Report Coverage
+      - name: Report Coverage and Upload Badges
         uses: glideapps/vitest-v8-json-coverage-summary@v1
         with:
           coverage-file: "coverage/coverage-summary.json"
@@ -35,30 +35,6 @@ jobs:
           show-files: "true"
           coverage-threshold: "80"
           make-badges: "true"
-
-      - name: Commit badges (if on main branch)
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add badges/
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update coverage badges"
-          git push
-
-  # Optional: Deploy badges to GitHub Pages
-  deploy-badges:
-    if: github.ref == 'refs/heads/main'
-    needs: test-and-coverage
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./badges
-          destination_dir: badges
+          upload-badges-to-pages: "true"
+          pages-branch: "gh-pages"
+          pages-badges-dir: "badges"

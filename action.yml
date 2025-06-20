@@ -30,6 +30,18 @@ inputs:
     description: "Whether to generate coverage badges in a badges directory"
     required: false
     default: "true"
+  upload-badges-to-pages:
+    description: "Whether to automatically upload badges to GitHub Pages branch"
+    required: false
+    default: "true"
+  pages-branch:
+    description: "Branch to upload badges to for GitHub Pages"
+    required: false
+    default: "gh-pages"
+  pages-badges-dir:
+    description: "Directory within the pages branch to store badges"
+    required: false
+    default: "badges"
 
 runs:
   using: "node20"

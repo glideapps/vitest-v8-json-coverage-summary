@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import * as fs from "fs";
 import * as path from "path";
+import { execSync } from "child_process";
 
 function getCoverageEmoji(percentage, threshold) {
   if (percentage >= threshold) return "🟢";
@@ -82,6 +83,91 @@ function createBadgesDirectory(coverage) {
   }
 }
 
+async function uploadBadgesToPages(token, pagesBranch, pagesBadgesDir) {
+  try {
+    const context = github.context;
+    const octokit = github.getOctokit(token);
+
+    // Configure git
+    execSync('git config --local user.email "action@github.com"', {
+      stdio: "inherit",
+    });
+    execSync('git config --local user.name "GitHub Action"', {
+      stdio: "inherit",
+    });
+
+    // Check if the pages branch exists
+    try {
+      await octokit.rest.repos.getBranch({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        branch: pagesBranch,
+      });
+    } catch (error) {
+      if (error.status === 404) {
+        // Branch doesn't exist, create it from the current branch
+        core.info(`Creating ${pagesBranch} branch from current branch`);
+        const currentBranch = context.ref.replace("refs/heads/", "");
+        const { data: currentBranchData } = await octokit.rest.repos.getBranch({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          branch: currentBranch,
+        });
+
+        await octokit.rest.git.createRef({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          ref: `refs/heads/${pagesBranch}`,
+          sha: currentBranchData.commit.sha,
+        });
+      } else {
+        throw error;
+      }
+    }
+
+    // Checkout the pages branch
+    execSync(`git fetch origin ${pagesBranch}`, { stdio: "inherit" });
+    execSync(`git checkout ${pagesBranch}`, { stdio: "inherit" });
+
+    // Create the badges directory in the pages branch
+    const pagesBadgesPath = path.join(process.cwd(), pagesBadgesDir);
+    if (!fs.existsSync(pagesBadgesPath)) {
+      fs.mkdirSync(pagesBadgesPath, { recursive: true });
+    }
+
+    // Copy badges from the local badges directory
+    const localBadgesPath = path.join(process.cwd(), "badges");
+    if (fs.existsSync(localBadgesPath)) {
+      const files = fs.readdirSync(localBadgesPath);
+      files.forEach((file) => {
+        if (file.endsWith(".json")) {
+          const sourcePath = path.join(localBadgesPath, file);
+          const destPath = path.join(pagesBadgesPath, file);
+          fs.copyFileSync(sourcePath, destPath);
+          core.info(`Copied ${file} to ${destPath}`);
+        }
+      });
+    }
+
+    // Check if there are changes to commit
+    try {
+      execSync("git add .", { stdio: "inherit" });
+      execSync("git diff --cached --quiet", { stdio: "pipe" });
+      core.info("No changes to commit");
+      return;
+    } catch (error) {
+      // There are changes to commit
+    }
+
+    // Commit and push changes
+    execSync('git commit -m "Update coverage badges"', { stdio: "inherit" });
+    execSync(`git push origin ${pagesBranch}`, { stdio: "inherit" });
+    core.info(`Successfully uploaded badges to ${pagesBranch} branch`);
+  } catch (error) {
+    core.warning(`Failed to upload badges to GitHub Pages: ${error.message}`);
+  }
+}
+
 function generateCoverageComment(coverage, title, showFiles, threshold) {
   const { summary, files } = coverage;
   let comment = `## ${title}\n\n`;
@@ -149,6 +235,12 @@ async function run() {
     );
     const makeBadges =
       core.getInput("make-badges", { required: false }) === "true";
+    const uploadBadgesToPages =
+      core.getInput("upload-badges-to-pages", { required: false }) === "true";
+    const pagesBranch =
+      core.getInput("pages-branch", { required: false }) || "gh-pages";
+    const pagesBadgesDir =
+      core.getInput("pages-badges-dir", { required: false }) || "badges";
 
     if (!token) {
       core.setFailed("GitHub token is required");
@@ -175,6 +267,11 @@ async function run() {
     // Generate badges if enabled
     if (makeBadges) {
       createBadgesDirectory(coverageData);
+
+      // Upload badges to GitHub Pages if enabled
+      if (uploadBadgesToPages) {
+        await uploadBadgesToPages(token, pagesBranch, pagesBadgesDir);
+      }
     }
 
     // Generate comment
@@ -239,6 +336,7 @@ if (typeof module !== "undefined" && module.exports) {
     getBadgeColor,
     generateCoverageBadge,
     createBadgesDirectory,
+    uploadBadgesToPages,
     generateCoverageComment,
   };
 }

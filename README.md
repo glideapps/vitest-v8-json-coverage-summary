@@ -11,6 +11,7 @@ A plugin for [Vitest](https://vitest.dev/) that generates a structured JSON cove
 - ✅ Compatible with Vitest 3.0+
 - 🚀 **NEW**: GitHub Action for automatic PR coverage reporting
 - 🏷️ **NEW**: Automatic coverage badge generation for GitHub Pages
+- 🚀 **NEW**: Automatic upload of badges to GitHub Pages
 
 ## Installation
 
@@ -20,7 +21,7 @@ npm install --save-dev vitest-v8-json-coverage-summary
 
 ## GitHub Action
 
-This package also includes a GitHub Action that automatically creates beautiful coverage reports in pull requests.
+This package also includes a GitHub Action that automatically creates beautiful coverage reports in pull requests and uploads coverage badges to GitHub Pages.
 
 ### Quick Start
 
@@ -32,6 +33,7 @@ on:
 
 permissions:
   pull-requests: write
+  contents: write # Required for GitHub Pages upload
 
 jobs:
   coverage:
@@ -44,7 +46,16 @@ jobs:
       - run: npm ci
       - run: npm test
       - uses: glideapps/vitest-v8-json-coverage-summary@v1
+        with:
+          make-badges: "true"
+          upload-badges-to-pages: "true"
 ```
+
+The action will automatically:
+
+- Create coverage reports in pull request comments
+- Generate coverage badges
+- Upload badges to the `gh-pages` branch for GitHub Pages
 
 For detailed documentation, see [ACTION_README.md](ACTION_README.md).
 

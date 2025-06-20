@@ -10,6 +10,7 @@ A GitHub Action that automatically creates beautiful coverage reports in pull re
 - 🔄 **Smart Updates**: Updates existing comments instead of creating duplicates
 - 🎨 **Visual Indicators**: Uses emojis to quickly identify coverage status
 - 🏷️ **Coverage Badges**: Generates shields.io compatible badges for GitHub Pages
+- 🚀 **Automatic GitHub Pages Upload**: Automatically uploads badges to GitHub Pages
 - ⚡ **Lightweight**: Fast execution with minimal dependencies
 
 ## Usage
@@ -56,6 +57,7 @@ on:
 
 permissions:
   pull-requests: write
+  contents: write # Required for GitHub Pages upload
 
 jobs:
   coverage:
@@ -82,18 +84,24 @@ jobs:
           show-files: "true"
           coverage-threshold: "90"
           make-badges: "true"
+          upload-badges-to-pages: "true"
+          pages-branch: "gh-pages"
+          pages-badges-dir: "badges"
 ```
 
 ## Inputs
 
-| Input                | Description                                               | Required | Default                          |
-| -------------------- | --------------------------------------------------------- | -------- | -------------------------------- |
-| `coverage-file`      | Path to the coverage summary JSON file                    | No       | `coverage/coverage-summary.json` |
-| `token`              | GitHub token for creating comments                        | No       | `${{ github.token }}`            |
-| `title`              | Title for the coverage report comment                     | No       | `📊 Coverage Report`             |
-| `show-files`         | Whether to show individual file coverage details          | No       | `true`                           |
-| `coverage-threshold` | Minimum coverage percentage to consider as good (0-100)   | No       | `80`                             |
-| `make-badges`        | Whether to generate coverage badges in a badges directory | No       | `true`                           |
+| Input                    | Description                                               | Required | Default                          |
+| ------------------------ | --------------------------------------------------------- | -------- | -------------------------------- |
+| `coverage-file`          | Path to the coverage summary JSON file                    | No       | `coverage/coverage-summary.json` |
+| `token`                  | GitHub token for creating comments                        | No       | `${{ github.token }}`            |
+| `title`                  | Title for the coverage report comment                     | No       | `📊 Coverage Report`             |
+| `show-files`             | Whether to show individual file coverage details          | No       | `true`                           |
+| `coverage-threshold`     | Minimum coverage percentage to consider as good (0-100)   | No       | `80`                             |
+| `make-badges`            | Whether to generate coverage badges in a badges directory | No       | `true`                           |
+| `upload-badges-to-pages` | Whether to automatically upload badges to GitHub Pages    | No       | `true`                           |
+| `pages-branch`           | Branch to upload badges to for GitHub Pages               | No       | `gh-pages`                       |
+| `pages-badges-dir`       | Directory within the pages branch to store badges         | No       | `badges`                         |
 
 ## Coverage File Format
 
@@ -208,26 +216,44 @@ When `make-badges` is enabled (default: `true`), the action creates a `badges` d
 
 ### Using Badges with GitHub Pages
 
-1. Enable GitHub Pages in your repository settings
-2. Set the source to "Deploy from a branch" and select your main branch
-3. The badges will be available at:
+The action automatically uploads badges to your GitHub Pages branch when `upload-badges-to-pages` is enabled (default: `true`).
+
+1. **Automatic Setup**: The action will:
+
+   - Create the `gh-pages` branch if it doesn't exist
+   - Upload badges to the specified directory
+   - Commit and push changes automatically
+
+2. **Enable GitHub Pages** in your repository settings:
+
+   - Go to Settings → Pages
+   - Set source to "Deploy from a branch"
+   - Select your `gh-pages` branch (or the branch specified in `pages-branch`)
+   - Set folder to `/ (root)` or `/badges` depending on your preference
+
+3. **Badge URLs** will be available at:
 
    ```
    https://yourusername.github.io/yourrepo/badges/coverage.json
+   https://yourusername.github.io/yourrepo/badges/statements.json
+   https://yourusername.github.io/yourrepo/badges/branches.json
+   https://yourusername.github.io/yourrepo/badges/functions.json
+   https://yourusername.github.io/yourrepo/badges/lines.json
    ```
 
-4. Use in your README.md:
+4. **Use in your README.md**:
    ```markdown
    ![Coverage](https://yourusername.github.io/yourrepo/badges/coverage.json)
+   ![Statements](https://yourusername.github.io/yourrepo/badges/statements.json)
+   ![Branches](https://yourusername.github.io/yourrepo/badges/branches.json)
    ```
 
-### Example Badge JSON
+### Required Permissions
 
-```json
-{
-  "schemaVersion": 1,
-  "label": "coverage",
-  "message": "89.8%",
-  "color": "green"
-}
+For automatic GitHub Pages upload, your workflow needs:
+
+```yaml
+permissions:
+  pull-requests: write
+  contents: write # Required for uploading to GitHub Pages
 ```

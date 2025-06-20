@@ -5,8 +5,8 @@ on:
     branches: [main, develop]
 
 permissions:
-  contents: read
   pull-requests: write
+  contents: write # Required for GitHub Pages upload
 
 jobs:
   test-and-coverage:
@@ -35,3 +35,4 @@ jobs:
           show-files: "true"
           coverage-threshold: "80"
           make-badges: "true"
+          upload-badges-to-pages: "true"
