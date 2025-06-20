@@ -10,6 +10,7 @@ A plugin for [Vitest](https://vitest.dev/) that generates a structured JSON cove
 - ✅ Tracks uncovered lines for detailed analysis
 - ✅ Compatible with Vitest 3.0+
 - 🚀 **NEW**: GitHub Action for automatic PR coverage reporting
+- 🏷️ **NEW**: Automatic coverage badge generation for GitHub Pages
 
 ## Installation
 

@@ -26,6 +26,10 @@ inputs:
     description: "Minimum coverage percentage to consider as good (0-100)"
     required: false
     default: "80"
+  make-badges:
+    description: "Whether to generate coverage badges in a badges directory"
+    required: false
+    default: "true"
 
 runs:
   using: "node20"

@@ -9,6 +9,7 @@ A GitHub Action that automatically creates beautiful coverage reports in pull re
 - 📁 **File-level Details**: Option to show individual file coverage breakdowns
 - 🔄 **Smart Updates**: Updates existing comments instead of creating duplicates
 - 🎨 **Visual Indicators**: Uses emojis to quickly identify coverage status
+- 🏷️ **Coverage Badges**: Generates shields.io compatible badges for GitHub Pages
 - ⚡ **Lightweight**: Fast execution with minimal dependencies
 
 ## Usage
@@ -80,17 +81,19 @@ jobs:
           title: "🧪 Test Coverage Report"
           show-files: "true"
           coverage-threshold: "90"
+          make-badges: "true"
 ```
 
 ## Inputs
 
-| Input                | Description                                             | Required | Default                          |
-| -------------------- | ------------------------------------------------------- | -------- | -------------------------------- |
-| `coverage-file`      | Path to the coverage summary JSON file                  | No       | `coverage/coverage-summary.json` |
-| `token`              | GitHub token for creating comments                      | No       | `${{ github.token }}`            |
-| `title`              | Title for the coverage report comment                   | No       | `📊 Coverage Report`             |
-| `show-files`         | Whether to show individual file coverage details        | No       | `true`                           |
-| `coverage-threshold` | Minimum coverage percentage to consider as good (0-100) | No       | `80`                             |
+| Input                | Description                                               | Required | Default                          |
+| -------------------- | --------------------------------------------------------- | -------- | -------------------------------- |
+| `coverage-file`      | Path to the coverage summary JSON file                    | No       | `coverage/coverage-summary.json` |
+| `token`              | GitHub token for creating comments                        | No       | `${{ github.token }}`            |
+| `title`              | Title for the coverage report comment                     | No       | `📊 Coverage Report`             |
+| `show-files`         | Whether to show individual file coverage details          | No       | `true`                           |
+| `coverage-threshold` | Minimum coverage percentage to consider as good (0-100)   | No       | `80`                             |
+| `make-badges`        | Whether to generate coverage badges in a badges directory | No       | `true`                           |
 
 ## Coverage File Format
 
@@ -182,3 +185,49 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Coverage Badges
+
+When `make-badges` is enabled (default: `true`), the action creates a `badges` directory with shields.io compatible JSON files:
+
+### Generated Badges
+
+- `badges/coverage.json` - Overall coverage percentage
+- `badges/statements.json` - Statement coverage
+- `badges/branches.json` - Branch coverage
+- `badges/functions.json` - Function coverage
+- `badges/lines.json` - Line coverage
+
+### Badge Colors
+
+- 🟢 **Bright Green**: 90% or higher
+- 🟢 **Green**: 80-89%
+- 🟡 **Yellow**: 70-79%
+- 🟠 **Orange**: 60-69%
+- 🔴 **Red**: Below 60%
+
+### Using Badges with GitHub Pages
+
+1. Enable GitHub Pages in your repository settings
+2. Set the source to "Deploy from a branch" and select your main branch
+3. The badges will be available at:
+
+   ```
+   https://yourusername.github.io/yourrepo/badges/coverage.json
+   ```
+
+4. Use in your README.md:
+   ```markdown
+   ![Coverage](https://yourusername.github.io/yourrepo/badges/coverage.json)
+   ```
+
+### Example Badge JSON
+
+```json
+{
+  "schemaVersion": 1,
+  "label": "coverage",
+  "message": "89.8%",
+  "color": "green"
+}
+```

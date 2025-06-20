@@ -34,3 +34,4 @@ jobs:
           title: "🧪 Test Coverage Report"
           show-files: "true"
           coverage-threshold: "80"
+          make-badges: "true"
