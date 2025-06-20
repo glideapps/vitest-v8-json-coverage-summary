@@ -30,19 +30,161 @@ inputs:
     description: "Whether to generate coverage badges in a badges directory"
     required: false
     default: "true"
-  upload-badges-to-pages:
-    description: "Whether to automatically upload badges to GitHub Pages branch"
-    required: false
-    default: "true"
-  pages-branch:
-    description: "Branch to upload badges to for GitHub Pages"
-    required: false
-    default: "gh-pages"
-  pages-badges-dir:
-    description: "Directory within the pages branch to store badges"
-    required: false
-    default: "badges"
 
 runs:
-  using: "node20"
-  main: "github-action/action.js"
+  using: "composite"
+  steps:
+    - name: Check if coverage file exists
+      shell: bash
+      run: |
+        if [ ! -f "${{ inputs.coverage-file }}" ]; then
+          echo "::error::Coverage file not found at ${{ inputs.coverage-file }}. Did you forget to add the reporter in your vitest.config.js?"
+          exit 1
+        fi
+
+    - name: Generate badges
+      if: inputs.make-badges == 'true'
+      shell: bash
+      run: |
+        # Parse coverage data
+        COVERAGE_DATA=$(cat "${{ inputs.coverage-file }}")
+
+        # Extract metrics
+        STATEMENTS=$(echo "$COVERAGE_DATA" | jq -r '.summary.statements')
+        BRANCHES=$(echo "$COVERAGE_DATA" | jq -r '.summary.branches')
+        FUNCTIONS=$(echo "$COVERAGE_DATA" | jq -r '.summary.functions')
+        LINES=$(echo "$COVERAGE_DATA" | jq -r '.summary.lines')
+
+        # Calculate average
+        AVG=$(echo "scale=1; ($STATEMENTS + $BRANCHES + $FUNCTIONS + $LINES) / 4" | bc)
+
+        # Create badges directory
+        mkdir -p badges
+
+        # Determine badge colors
+        get_color() {
+          local coverage=$1
+          if (( $(echo "$coverage >= 90" | bc -l) )); then
+            echo "brightgreen"
+          elif (( $(echo "$coverage >= 80" | bc -l) )); then
+            echo "green"
+          elif (( $(echo "$coverage >= 70" | bc -l) )); then
+            echo "yellow"
+          elif (( $(echo "$coverage >= 60" | bc -l) )); then
+            echo "orange"
+          else
+            echo "red"
+          fi
+        }
+
+        # Generate overall coverage badge
+        COVERAGE_COLOR=$(get_color $AVG)
+        echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"$AVG%\",\"color\":\"$COVERAGE_COLOR\"}" > badges/coverage.json
+
+        # Generate individual metric badges
+        STATEMENTS_COLOR=$(get_color $STATEMENTS)
+        echo "{\"schemaVersion\":1,\"label\":\"statements\",\"message\":\"$STATEMENTS%\",\"color\":\"$STATEMENTS_COLOR\"}" > badges/statements.json
+
+        BRANCHES_COLOR=$(get_color $BRANCHES)
+        echo "{\"schemaVersion\":1,\"label\":\"branches\",\"message\":\"$BRANCHES%\",\"color\":\"$BRANCHES_COLOR\"}" > badges/branches.json
+
+        FUNCTIONS_COLOR=$(get_color $FUNCTIONS)
+        echo "{\"schemaVersion\":1,\"label\":\"functions\",\"message\":\"$FUNCTIONS%\",\"color\":\"$FUNCTIONS_COLOR\"}" > badges/functions.json
+
+        LINES_COLOR=$(get_color $LINES)
+        echo "{\"schemaVersion\":1,\"label\":\"lines\",\"message\":\"$LINES%\",\"color\":\"$LINES_COLOR\"}" > badges/lines.json
+
+        echo "✅ Generated badges:"
+        echo "  - coverage.json: $AVG% ($COVERAGE_COLOR)"
+        echo "  - statements.json: $STATEMENTS% ($STATEMENTS_COLOR)"
+        echo "  - branches.json: $BRANCHES% ($BRANCHES_COLOR)"
+        echo "  - functions.json: $FUNCTIONS% ($FUNCTIONS_COLOR)"
+        echo "  - lines.json: $LINES% ($LINES_COLOR)"
+
+    - name: Generate coverage report
+      shell: bash
+      run: |
+        # Parse coverage data
+        COVERAGE_DATA=$(cat "${{ inputs.coverage-file }}")
+
+        # Extract metrics
+        STATEMENTS=$(echo "$COVERAGE_DATA" | jq -r '.summary.statements')
+        BRANCHES=$(echo "$COVERAGE_DATA" | jq -r '.summary.branches')
+        FUNCTIONS=$(echo "$COVERAGE_DATA" | jq -r '.summary.functions')
+        LINES=$(echo "$COVERAGE_DATA" | jq -r '.summary.lines')
+
+        # Calculate average
+        AVG=$(echo "scale=1; ($STATEMENTS + $BRANCHES + $FUNCTIONS + $LINES) / 4" | bc)
+
+        # Get emoji based on threshold
+        get_emoji() {
+          local coverage=$1
+          local threshold=$2
+          if (( $(echo "$coverage >= $threshold" | bc -l) )); then
+            echo "🟢"
+          elif (( $(echo "$coverage >= $threshold * 0.8" | bc -l) )); then
+            echo "🟡"
+          else
+            echo "🔴"
+          fi
+        }
+
+        THRESHOLD="${{ inputs.coverage-threshold }}"
+        STATEMENTS_EMOJI=$(get_emoji $STATEMENTS $THRESHOLD)
+        BRANCHES_EMOJI=$(get_emoji $BRANCHES $THRESHOLD)
+        FUNCTIONS_EMOJI=$(get_emoji $FUNCTIONS $THRESHOLD)
+        LINES_EMOJI=$(get_emoji $LINES $THRESHOLD)
+        AVG_EMOJI=$(get_emoji $AVG $THRESHOLD)
+
+        # Generate markdown report
+        cat > coverage-report.md << EOF
+        ## ${{ inputs.title }}
+
+        ### 📈 Coverage Summary
+
+        | Metric | Coverage | Status |
+        |--------|----------|--------|
+        | **Statements** | ${STATEMENTS}% | $STATEMENTS_EMOJI |
+        | **Branches** | ${BRANCHES}% | $BRANCHES_EMOJI |
+        | **Functions** | ${FUNCTIONS}% | $FUNCTIONS_EMOJI |
+        | **Lines** | ${LINES}% | $LINES_EMOJI |
+
+        **Overall Coverage: ${AVG}% $AVG_EMOJI**
+        EOF
+
+        # Add file details if requested
+        if [ "${{ inputs.show-files }}" = "true" ]; then
+          echo "" >> coverage-report.md
+          echo "### 📁 File Details" >> coverage-report.md
+          echo "" >> coverage-report.md
+          echo "| File | Statements | Branches | Functions | Lines |" >> coverage-report.md
+          echo "|------|------------|----------|-----------|-------|" >> coverage-report.md
+          
+          # Extract file details
+          echo "$COVERAGE_DATA" | jq -r '.files[] | "| `\(.file | ltrimstr("./"))` | \(.statements)% | \(.branches)% | \(.functions)% | \(.lines)% |"' >> coverage-report.md
+        fi
+
+        echo "" >> coverage-report.md
+        echo "---" >> coverage-report.md
+        echo "*Generated by [@glideapps/vitest-v8-json-coverage-summary](https://github.com/glideapps/vitest-v8-json-coverage-summary)*" >> coverage-report.md
+
+        echo "📊 Generated coverage report"
+
+    - name: Comment on pull request
+      if: github.event_name == 'pull_request'
+      shell: bash
+      run: |
+        # Read the report
+        REPORT=$(cat coverage-report.md)
+
+        # Escape the report for JSON
+        REPORT_JSON=$(echo "$REPORT" | jq -Rs .)
+
+        # Create the comment
+        curl -X POST \
+          -H "Authorization: token ${{ inputs.token }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Content-Type: application/json" \
+          "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/${{ github.event.pull_request.number }}/comments" \
+          -d "{\"body\":$REPORT_JSON}" \
+          -s -o /dev/null -w "%{http_code}" | grep -q "201\|200" && echo "✅ Comment posted successfully" || echo "⚠️ Failed to post comment"

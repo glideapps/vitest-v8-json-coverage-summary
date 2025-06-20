@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-// Badge generation functions (copied from action.js for testing)
+// Test badge generation logic (simplified version of what's in the YAML)
 function getBadgeColor(coverage) {
   if (coverage >= 90) return "brightgreen";
   if (coverage >= 80) return "green";
@@ -66,6 +66,8 @@ function createBadgesDirectory(coverage) {
       fs.writeFileSync(metricBadgePath, JSON.stringify(badgeData, null, 2));
       console.log(`Created ${metric.label} badge at ${metricBadgePath}`);
     });
+
+    console.log("✅ Badges generated successfully!");
   } catch (error) {
     console.error(`Failed to create badges: ${error.message}`);
   }
