@@ -235,7 +235,7 @@ async function run() {
     );
     const makeBadges =
       core.getInput("make-badges", { required: false }) === "true";
-    const uploadBadgesToPages =
+    const shouldUploadBadges =
       core.getInput("upload-badges-to-pages", { required: false }) === "true";
     const pagesBranch =
       core.getInput("pages-branch", { required: false }) || "gh-pages";
@@ -269,7 +269,7 @@ async function run() {
       createBadgesDirectory(coverageData);
 
       // Upload badges to GitHub Pages if enabled
-      if (uploadBadgesToPages) {
+      if (shouldUploadBadges) {
         await uploadBadgesToPages(token, pagesBranch, pagesBadgesDir);
       }
     }
