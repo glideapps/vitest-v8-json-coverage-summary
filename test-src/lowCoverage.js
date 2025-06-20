@@ -1,8 +1,7 @@
 // This file has intentionally low coverage for testing purposes
-export function poorlyTestedFunction() {
-  // This branch is never tested
-  if (Math.random() > 0.5) {
-    console.log("This will never be executed in tests");
+export function poorlyTestedFunction(forceBranch) {
+  // This branch is never tested unless forced
+  if (forceBranch === "unreachable") {
     return "unreachable";
   }
 
