@@ -1,8 +1,8 @@
-import * as core from "@actions/core";
-import * as github from "@actions/github";
-import * as fs from "fs";
-import * as path from "path";
-import { execSync } from "child_process";
+const core = require("@actions/core");
+const github = require("@actions/github");
+const fs = require("fs");
+const path = require("path");
+const { execSync } = require("child_process");
 
 function getCoverageEmoji(percentage, threshold) {
   if (percentage >= threshold) return "🟢";
@@ -329,15 +329,13 @@ async function run() {
 run();
 
 // Export functions for testing
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = {
-    getCoverageEmoji,
-    formatPercentage,
-    getBadgeColor,
-    generateCoverageBadge,
-    createBadgesDirectory,
-    uploadBadgesToPages,
-    generateCoverageComment,
-  };
-}
+module.exports = {
+  getCoverageEmoji,
+  formatPercentage,
+  getBadgeColor,
+  generateCoverageBadge,
+  createBadgesDirectory,
+  uploadBadgesToPages,
+  generateCoverageComment,
+};
 //# sourceMappingURL=action.js.map
