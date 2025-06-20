@@ -105,21 +105,34 @@ async function uploadBadgesToPages(token, pagesBranch, pagesBadgesDir) {
       });
     } catch (error) {
       if (error.status === 404) {
-        // Branch doesn't exist, create it from the current branch
-        core.info(`Creating ${pagesBranch} branch from current branch`);
-        const currentBranch = context.ref.replace("refs/heads/", "");
-        const { data: currentBranchData } = await octokit.rest.repos.getBranch({
+        // Branch doesn't exist, create it from the default branch (usually main)
+        core.info(`Creating ${pagesBranch} branch from default branch`);
+
+        // Get the default branch
+        const { data: repoData } = await octokit.rest.repos.get({
           owner: context.repo.owner,
           repo: context.repo.repo,
-          branch: currentBranch,
+        });
+
+        const defaultBranch = repoData.default_branch;
+        core.info(`Using default branch: ${defaultBranch}`);
+
+        const { data: defaultBranchData } = await octokit.rest.repos.getBranch({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          branch: defaultBranch,
         });
 
         await octokit.rest.git.createRef({
           owner: context.repo.owner,
           repo: context.repo.repo,
           ref: `refs/heads/${pagesBranch}`,
-          sha: currentBranchData.commit.sha,
+          sha: defaultBranchData.commit.sha,
         });
+
+        core.info(
+          `Successfully created ${pagesBranch} branch from ${defaultBranch}`
+        );
       } else {
         throw error;
       }
