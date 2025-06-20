@@ -1,13 +1,10 @@
-name: Example Coverage Workflow
+name: Coverage Report Only
 on:
   pull_request:
-    branches: [main]
-  push:
     branches: [main]
 
 permissions:
   pull-requests: write
-  contents: write # Required for GitHub Pages upload
 
 jobs:
   coverage:
@@ -26,21 +23,11 @@ jobs:
       - name: Run tests with coverage
         run: npm test
 
+      # Only coverage reporting - no badges
       - name: Report Coverage
-        uses: ./
+        uses: glideapps/vitest-v8-json-coverage-summary/actions/coverage-reporter@v0.0.0-echo
         with:
           coverage-file: "coverage/coverage-summary.json"
           title: "🧪 Test Coverage Report"
           show-files: "true"
           coverage-threshold: "80"
-          make-badges: "true"
-
-      # Upload badges to GitHub Pages (only on main branch)
-      - name: Upload Badges to GitHub Pages
-        if: github.ref == 'refs/heads/main'
-        uses: ./
-        with:
-          action: "badge-upload-action.yml"
-          badges-dir: "badges"
-          pages-branch: "gh-pages"
-          pages-badges-dir: "badges"

@@ -1,4 +1,4 @@
-name: Coverage Report with Badge Upload
+name: Full Coverage Workflow
 on:
   pull_request:
     branches: [main]
@@ -28,7 +28,7 @@ jobs:
 
       # Coverage reporting (runs on PRs and main)
       - name: Report Coverage
-        uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
+        uses: glideapps/vitest-v8-json-coverage-summary/actions/coverage-reporter@v0.0.0-echo
         with:
           coverage-file: "coverage/coverage-summary.json"
           title: "🧪 Test Coverage Report"
@@ -45,30 +45,18 @@ jobs:
         with:
           fetch-depth: 0 # Needed for git operations
 
-      # Option 1: Use the badge upload action (generates badges automatically)
-      - name: Upload Badges to GitHub Pages
-        uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
+      # Generate badges
+      - name: Generate Badges
+        uses: glideapps/vitest-v8-json-coverage-summary/actions/badge-generator@v0.0.0-echo
         with:
-          action: "badge-upload-action.yml"
           coverage-file: "coverage/coverage-summary.json"
+          badges-dir: "badges"
+
+      # Upload badges to GitHub Pages
+      - name: Upload Badges to GitHub Pages
+        uses: glideapps/vitest-v8-json-coverage-summary/actions/badge-uploader@v0.0.0-echo
+        with:
           badges-dir: "badges"
           pages-branch: "gh-pages"
           pages-badges-dir: "badges"
-          generate-badges: "true"
-
-      # Option 2: Use separate actions for more control
-      # - name: Generate Badges
-      #   uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
-      #   with:
-      #     action: "badge-generator-action.yml"
-      #     coverage-file: "coverage/coverage-summary.json"
-      #     badges-dir: "badges"
-      #
-      # - name: Upload Badges to GitHub Pages
-      #   uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
-      #   with:
-      #     action: "badge-upload-action.yml"
-      #     badges-dir: "badges"
-      #     pages-branch: "gh-pages"
-      #     pages-badges-dir: "badges"
-      #     generate-badges: "false"
+          generate-badges: "false" # Use existing badges

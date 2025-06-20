@@ -1,6 +1,6 @@
 # Vitest V8 JSON Coverage Summary
 
-A plugin for [Vitest](https://vitest.dev/) that generates a structured JSON coverage summary from V8 coverage data. This reporter creates a `coverage-summary.json` file with detailed coverage information for statements, branches, functions, and lines.
+A plugin for [Vitest](https://vitest.dev/) that generates a structured JSON coverage summary from V8 coverage data. This package also includes GitHub Actions for coverage reporting and badge management.
 
 ## Features
 
@@ -9,10 +9,9 @@ A plugin for [Vitest](https://vitest.dev/) that generates a structured JSON cove
 - ✅ Includes file-level and overall coverage statistics
 - ✅ Tracks uncovered lines for detailed analysis
 - ✅ Compatible with Vitest 3.0+
-- 🚀 **NEW**: GitHub Action for automatic PR coverage reporting
-- 🏷️ **NEW**: Automatic coverage badge generation for GitHub Pages
-- 🚀 **NEW**: Automatic upload of badges to GitHub Pages
-- 🔧 **NEW**: Pure YAML implementation - no JavaScript complexity
+- 🚀 **GitHub Actions**: Coverage reporting, badge generation, and badge upload
+- 🏷️ **Coverage Badges**: Shields.io compatible badges
+- 🔧 **Modular Design**: Separate actions for different use cases
 
 ## Installation
 
@@ -20,11 +19,53 @@ A plugin for [Vitest](https://vitest.dev/) that generates a structured JSON cove
 npm install --save-dev vitest-v8-json-coverage-summary
 ```
 
-## GitHub Action
+## GitHub Actions
 
-This package also includes a GitHub Action that automatically creates beautiful coverage reports in pull requests and uploads coverage badges to GitHub Pages. Built with pure YAML and shell commands for maximum reliability.
+This package includes three separate GitHub Actions that can be used independently:
 
-### Quick Start
+### 1. Coverage Reporter
+
+Creates beautiful coverage reports in pull requests.
+
+```yaml
+- name: Report Coverage
+  uses: glideapps/vitest-v8-json-coverage-summary/actions/coverage-reporter@v0.0.0-echo
+  with:
+    coverage-file: "coverage/coverage-summary.json"
+    title: "🧪 Test Coverage Report"
+    show-files: "true"
+    coverage-threshold: "80"
+```
+
+### 2. Badge Generator
+
+Generates coverage badges from coverage data.
+
+```yaml
+- name: Generate Badges
+  uses: glideapps/vitest-v8-json-coverage-summary/actions/badge-generator@v0.0.0-echo
+  with:
+    coverage-file: "coverage/coverage-summary.json"
+    badges-dir: "badges"
+```
+
+### 3. Badge Uploader
+
+Uploads badges to GitHub Pages.
+
+```yaml
+- name: Upload Badges to GitHub Pages
+  uses: glideapps/vitest-v8-json-coverage-summary/actions/badge-uploader@v0.0.0-echo
+  with:
+    coverage-file: "coverage/coverage-summary.json"
+    badges-dir: "badges"
+    pages-branch: "gh-pages"
+    generate-badges: "true"
+```
+
+## Quick Start
+
+### Basic Coverage Reporting
 
 ```yaml
 name: Coverage Report
@@ -34,7 +75,6 @@ on:
 
 permissions:
   pull-requests: write
-  contents: write # Required for GitHub Pages upload
 
 jobs:
   coverage:
@@ -46,20 +86,86 @@ jobs:
           node-version: "20"
       - run: npm ci
       - run: npm test
-      - uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
+      - uses: glideapps/vitest-v8-json-coverage-summary/actions/coverage-reporter@v0.0.0-echo
         with:
           coverage-file: "coverage/coverage-summary.json"
 ```
 
-The action will automatically:
+### Full Workflow with Badges
 
-- Create coverage reports in pull request comments
-- Generate coverage badges
-- Upload badges to the `gh-pages` branch for GitHub Pages
+```yaml
+name: Coverage with Badges
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
 
-**Built with pure YAML and shell commands** - no JavaScript complexity, no module system issues, no permission headaches!
+permissions:
+  pull-requests: write
+  contents: write
 
-### Badge URLs
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npm test
+      - uses: glideapps/vitest-v8-json-coverage-summary/actions/coverage-reporter@v0.0.0-echo
+
+  badges:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: coverage
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npm test
+      - uses: glideapps/vitest-v8-json-coverage-summary/actions/badge-uploader@v0.0.0-echo
+        with:
+          generate-badges: "true"
+```
+
+## Action Reference
+
+### Coverage Reporter
+
+| Input                | Description                                             | Required | Default                          |
+| -------------------- | ------------------------------------------------------- | -------- | -------------------------------- |
+| `coverage-file`      | Path to the coverage summary JSON file                  | No       | `coverage/coverage-summary.json` |
+| `token`              | GitHub token for creating comments                      | No       | `${{ github.token }}`            |
+| `title`              | Title for the coverage report comment                   | No       | `📊 Coverage Report`             |
+| `show-files`         | Whether to show individual file coverage details        | No       | `true`                           |
+| `coverage-threshold` | Minimum coverage percentage to consider as good (0-100) | No       | `80`                             |
+
+### Badge Generator
+
+| Input           | Description                              | Required | Default                          |
+| --------------- | ---------------------------------------- | -------- | -------------------------------- |
+| `coverage-file` | Path to the coverage summary JSON file   | No       | `coverage/coverage-summary.json` |
+| `badges-dir`    | Directory to output the generated badges | No       | `badges`                         |
+
+### Badge Uploader
+
+| Input              | Description                                       | Required | Default                            |
+| ------------------ | ------------------------------------------------- | -------- | ---------------------------------- |
+| `coverage-file`    | Path to the coverage summary JSON file            | No       | `coverage/coverage-summary.json`   |
+| `badges-dir`       | Directory containing the badges to upload         | No       | `badges`                           |
+| `pages-branch`     | Branch to upload badges to for GitHub Pages       | No       | `gh-pages`                         |
+| `pages-badges-dir` | Directory within the pages branch to store badges | No       | `badges`                           |
+| `commit-message`   | Commit message for badge updates                  | No       | `Update coverage badges [skip ci]` |
+| `generate-badges`  | Whether to generate badges if they don't exist    | No       | `true`                             |
+
+## Badge URLs
 
 When GitHub Pages is enabled, badges are available at:
 
@@ -77,7 +183,36 @@ Use in your README.md:
 ![Coverage](https://yourusername.github.io/yourrepo/badges/coverage.json)
 ```
 
-For detailed documentation, see [ACTION_README.md](ACTION_README.md).
+## Examples
+
+See the `examples/` directory for complete workflow examples:
+
+- `coverage-only.yml` - Only coverage reporting
+- `badge-generator-only.yml` - Only badge generation
+- `badge-uploader-only.yml` - Only badge upload
+- `full-workflow.yml` - Complete workflow with all actions
+
+## Setup
+
+### Configure Vitest
+
+```javascript
+// vitest.config.js
+export default {
+  coverage: {
+    provider: "v8",
+    reporter: ["json-summary"],
+    reportsDirectory: "coverage",
+  },
+};
+```
+
+### Enable GitHub Pages
+
+1. Go to Settings → Pages
+2. Set source to "Deploy from a branch"
+3. Select `gh-pages` branch
+4. Set folder to `/ (root)` or `/badges`
 
 ## Usage
 
@@ -87,25 +222,6 @@ Add the reporter to your Vitest configuration:
 
 ```javascript
 // vitest.config.js
-import { defineConfig } from "vitest/config";
-import V8JSONSummaryReporter from "vitest-v8-json-coverage-summary";
-
-export default defineConfig({
-  test: {
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "json"],
-      reportsDirectory: "./coverage",
-    },
-    reporters: ["default", new V8JSONSummaryReporter()],
-  },
-});
-```
-
-### TypeScript Configuration
-
-```typescript
-// vitest.config.ts
 import { defineConfig } from "vitest/config";
 import V8JSONSummaryReporter from "vitest-v8-json-coverage-summary";
 

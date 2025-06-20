@@ -1,0 +1,152 @@
+name: "Coverage Badge Uploader"
+description: "Uploads coverage badges to GitHub Pages branch"
+author: "Glide Apps"
+branding:
+  icon: "shield"
+  color: "green"
+
+inputs:
+  coverage-file:
+    description: "Path to the coverage summary JSON file (used if badges don't exist)"
+    required: false
+    default: "coverage/coverage-summary.json"
+  badges-dir:
+    description: "Directory containing the badges to upload"
+    required: false
+    default: "badges"
+  pages-branch:
+    description: "Branch to upload badges to for GitHub Pages"
+    required: false
+    default: "gh-pages"
+  pages-badges-dir:
+    description: "Directory within the pages branch to store badges"
+    required: false
+    default: "badges"
+  commit-message:
+    description: "Commit message for badge updates"
+    required: false
+    default: "Update coverage badges [skip ci]"
+  generate-badges:
+    description: "Whether to generate badges if they don't exist"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check if badges exist
+      shell: bash
+      run: |
+        if [ ! -d "${{ inputs.badges-dir }}" ] || [ ! -f "${{ inputs.badges-dir }}/coverage.json" ]; then
+          if [ "${{ inputs.generate-badges }}" = "true" ]; then
+            echo "⚠️ No badges found. Will generate them from coverage data."
+          else
+            echo "::error::No badges found in ${{ inputs.badges-dir }}. Set generate-badges=true or run the badge generator first."
+            exit 1
+          fi
+        else
+          echo "✅ Found existing badges in ${{ inputs.badges-dir }}/"
+        fi
+
+    - name: Generate badges if needed
+      if: inputs.generate-badges == 'true' && (inputs.badges-dir == 'badges' && !fileExists('badges/coverage.json'))
+      shell: bash
+      run: |
+        # Parse coverage data
+        COVERAGE_DATA=$(cat "${{ inputs.coverage-file }}")
+
+        # Extract metrics
+        STATEMENTS=$(echo "$COVERAGE_DATA" | jq -r '.summary.statements')
+        BRANCHES=$(echo "$COVERAGE_DATA" | jq -r '.summary.branches')
+        FUNCTIONS=$(echo "$COVERAGE_DATA" | jq -r '.summary.functions')
+        LINES=$(echo "$COVERAGE_DATA" | jq -r '.summary.lines')
+
+        # Calculate average
+        AVG=$(echo "scale=1; ($STATEMENTS + $BRANCHES + $FUNCTIONS + $LINES) / 4" | bc)
+
+        # Create badges directory
+        mkdir -p ${{ inputs.badges-dir }}
+
+        # Determine badge colors
+        get_color() {
+          local coverage=$1
+          if (( $(echo "$coverage >= 90" | bc -l) )); then
+            echo "brightgreen"
+          elif (( $(echo "$coverage >= 80" | bc -l) )); then
+            echo "green"
+          elif (( $(echo "$coverage >= 70" | bc -l) )); then
+            echo "yellow"
+          elif (( $(echo "$coverage >= 60" | bc -l) )); then
+            echo "orange"
+          else
+            echo "red"
+          fi
+        }
+
+        # Generate overall coverage badge
+        COVERAGE_COLOR=$(get_color $AVG)
+        echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"$AVG%\",\"color\":\"$COVERAGE_COLOR\"}" > ${{ inputs.badges-dir }}/coverage.json
+
+        # Generate individual metric badges
+        STATEMENTS_COLOR=$(get_color $STATEMENTS)
+        echo "{\"schemaVersion\":1,\"label\":\"statements\",\"message\":\"$STATEMENTS%\",\"color\":\"$STATEMENTS_COLOR\"}" > ${{ inputs.badges-dir }}/statements.json
+
+        BRANCHES_COLOR=$(get_color $BRANCHES)
+        echo "{\"schemaVersion\":1,\"label\":\"branches\",\"message\":\"$BRANCHES%\",\"color\":\"$BRANCHES_COLOR\"}" > ${{ inputs.badges-dir }}/branches.json
+
+        FUNCTIONS_COLOR=$(get_color $FUNCTIONS)
+        echo "{\"schemaVersion\":1,\"label\":\"functions\",\"message\":\"$FUNCTIONS%\",\"color\":\"$FUNCTIONS_COLOR\"}" > ${{ inputs.badges-dir }}/functions.json
+
+        LINES_COLOR=$(get_color $LINES)
+        echo "{\"schemaVersion\":1,\"label\":\"lines\",\"message\":\"$LINES%\",\"color\":\"$LINES_COLOR\"}" > ${{ inputs.badges-dir }}/lines.json
+
+        echo "✅ Generated badges in ${{ inputs.badges-dir }}/:"
+        echo "  - coverage.json: $AVG% ($COVERAGE_COLOR)"
+        echo "  - statements.json: $STATEMENTS% ($STATEMENTS_COLOR)"
+        echo "  - branches.json: $BRANCHES% ($BRANCHES_COLOR)"
+        echo "  - functions.json: $FUNCTIONS% ($FUNCTIONS_COLOR)"
+        echo "  - lines.json: $LINES% ($LINES_COLOR)"
+
+    - name: Upload badges to GitHub Pages
+      shell: bash
+      run: |
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+        # Create or checkout the pages branch
+        if git show-ref --verify --quiet refs/remotes/origin/${{ inputs.pages-branch }}; then
+          echo "📁 Checking out existing ${{ inputs.pages-branch }} branch"
+          git checkout ${{ inputs.pages-branch }}
+          git pull origin ${{ inputs.pages-branch }}
+        else
+          echo "🆕 Creating new ${{ inputs.pages-branch }} branch from current branch"
+          # Save badges to temporary location before cleanup
+          cp -r ${{ inputs.badges-dir }} /tmp/badges-backup
+          git checkout --orphan ${{ inputs.pages-branch }}
+          git rm -rf . || true
+        fi
+
+        # Create the badges directory for pages
+        mkdir -p ${{ inputs.pages-badges-dir }}
+
+        # Copy badges to the pages directory from backup or current location
+        if [ -d "/tmp/badges-backup" ]; then
+          cp /tmp/badges-backup/*.json ${{ inputs.pages-badges-dir }}/
+        else
+          cp ${{ inputs.badges-dir }}/*.json ${{ inputs.pages-badges-dir }}/
+        fi
+        echo "📋 Copied badges to ${{ inputs.pages-badges-dir }}/"
+
+        # Add files to staging
+        git add ${{ inputs.pages-badges-dir }}/
+
+        # Check if there are changes to commit
+        if git diff --cached --quiet; then
+          echo "ℹ️ No changes to commit"
+        else
+          # Commit and push changes
+          git commit -m "${{ inputs.commit-message }}"
+          git push origin ${{ inputs.pages-branch }}
+          echo "✅ Successfully uploaded badges to ${{ inputs.pages-branch }} branch"
+        fi
