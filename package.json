@@ -1,6 +1,6 @@
 {
   "name": "@glideapps/vitest-v8-json-coverage-summary",
-  "version": "0.0.0-quebec",
+  "version": "0.0.0-romeo",
   "description": "A plugin for vitest that generates a coverage summary in json format",
   "main": "dist/v8.json.summary.reporter.js",
   "types": "dist/v8.json.summary.reporter.d.ts",
