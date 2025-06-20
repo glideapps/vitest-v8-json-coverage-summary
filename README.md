@@ -34,6 +34,7 @@ on:
 
 permissions:
   pull-requests: write
+  contents: write # Required for GitHub Pages upload
 
 jobs:
   coverage:
@@ -45,10 +46,9 @@ jobs:
           node-version: "20"
       - run: npm ci
       - run: npm test
-      - uses: glideapps/vitest-v8-json-coverage-summary@v1
+      - uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
         with:
-          make-badges: "true"
-          upload-badges-to-pages: "true"
+          coverage-file: "coverage/coverage-summary.json"
 ```
 
 The action will automatically:
@@ -58,6 +58,24 @@ The action will automatically:
 - Upload badges to the `gh-pages` branch for GitHub Pages
 
 **Built with pure YAML and shell commands** - no JavaScript complexity, no module system issues, no permission headaches!
+
+### Badge URLs
+
+When GitHub Pages is enabled, badges are available at:
+
+```
+https://yourusername.github.io/yourrepo/badges/coverage.json
+https://yourusername.github.io/yourrepo/badges/statements.json
+https://yourusername.github.io/yourrepo/badges/branches.json
+https://yourusername.github.io/yourrepo/badges/functions.json
+https://yourusername.github.io/yourrepo/badges/lines.json
+```
+
+Use in your README.md:
+
+```markdown
+![Coverage](https://yourusername.github.io/yourrepo/badges/coverage.json)
+```
 
 For detailed documentation, see [ACTION_README.md](ACTION_README.md).
 

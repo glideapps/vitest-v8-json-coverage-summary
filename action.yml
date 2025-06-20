@@ -30,6 +30,18 @@ inputs:
     description: "Whether to generate coverage badges in a badges directory"
     required: false
     default: "true"
+  upload-badges-to-pages:
+    description: "Whether to automatically upload badges to GitHub Pages branch"
+    required: false
+    default: "true"
+  pages-branch:
+    description: "Branch to upload badges to for GitHub Pages"
+    required: false
+    default: "gh-pages"
+  pages-badges-dir:
+    description: "Directory within the pages branch to store badges"
+    required: false
+    default: "badges"
 
 runs:
   using: "composite"
@@ -100,6 +112,43 @@ runs:
         echo "  - branches.json: $BRANCHES% ($BRANCHES_COLOR)"
         echo "  - functions.json: $FUNCTIONS% ($FUNCTIONS_COLOR)"
         echo "  - lines.json: $LINES% ($LINES_COLOR)"
+
+    - name: Upload badges to GitHub Pages
+      if: inputs.make-badges == 'true' && inputs.upload-badges-to-pages == 'true'
+      shell: bash
+      run: |
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+        # Create or checkout the pages branch
+        if git show-ref --verify --quiet refs/remotes/origin/${{ inputs.pages-branch }}; then
+          echo "📁 Checking out existing ${{ inputs.pages-branch }} branch"
+          git checkout ${{ inputs.pages-branch }}
+          git pull origin ${{ inputs.pages-branch }}
+        else
+          echo "🆕 Creating new ${{ inputs.pages-branch }} branch from current branch"
+          git checkout --orphan ${{ inputs.pages-branch }}
+          git rm -rf . || true
+        fi
+
+        # Create the badges directory
+        mkdir -p ${{ inputs.pages-badges-dir }}
+
+        # Copy badges to the pages branch
+        cp badges/*.json ${{ inputs.pages-badges-dir }}/
+        echo "📋 Copied badges to ${{ inputs.pages-badges-dir }}/"
+
+        # Check if there are changes to commit
+        if git diff --quiet && git diff --cached --quiet; then
+          echo "ℹ️ No changes to commit"
+        else
+          # Commit and push changes
+          git add ${{ inputs.pages-badges-dir }}/
+          git commit -m "Update coverage badges [skip ci]"
+          git push origin ${{ inputs.pages-branch }}
+          echo "✅ Successfully uploaded badges to ${{ inputs.pages-branch }} branch"
+        fi
 
     - name: Generate coverage report
       shell: bash
