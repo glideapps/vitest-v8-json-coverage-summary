@@ -117,6 +117,12 @@ runs:
       if: inputs.make-badges == 'true' && inputs.upload-badges-to-pages == 'true'
       shell: bash
       run: |
+        # Check if badges were generated
+        if [ ! -d "badges" ] || [ ! -f "badges/coverage.json" ]; then
+          echo "⚠️ No badges found to upload. Skipping GitHub Pages upload."
+          exit 0
+        fi
+
         # Configure git
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
@@ -128,8 +134,12 @@ runs:
           git pull origin ${{ inputs.pages-branch }}
         else
           echo "🆕 Creating new ${{ inputs.pages-branch }} branch from current branch"
+          # Save badges to temporary location before cleanup
+          cp -r badges /tmp/badges-backup
           git checkout --orphan ${{ inputs.pages-branch }}
           git rm -rf . || true
+          # Restore badges after cleanup
+          cp -r /tmp/badges-backup badges
         fi
 
         # Create the badges directory
