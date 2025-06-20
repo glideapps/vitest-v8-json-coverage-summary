@@ -25,6 +25,7 @@ on:
 
 permissions:
   pull-requests: write
+  contents: write # Required for GitHub Pages upload
 
 jobs:
   coverage:
@@ -250,10 +251,36 @@ The action automatically uploads badges to your GitHub Pages branch when `upload
 
 ### Required Permissions
 
-For automatic GitHub Pages upload, your workflow needs:
+For automatic GitHub Pages upload, your workflow MUST include these permissions:
+
+```yaml
+permissions:
+  pull-requests: write # For creating/updating PR comments
+  contents: write # For uploading badges to GitHub Pages
+```
+
+**Without `contents: write` permission, you'll see this error:**
+
+```
+Warning: Failed to upload badges to GitHub Pages: Resource not accessible by integration
+```
+
+### Troubleshooting
+
+#### "Resource not accessible by integration" Error
+
+This error occurs when the action doesn't have sufficient permissions to create git references or push to branches.
+
+**Solution:** Add the required permissions to your workflow:
 
 ```yaml
 permissions:
   pull-requests: write
-  contents: write # Required for uploading to GitHub Pages
+  contents: write
 ```
+
+#### "Branch not found" Error
+
+This error occurs when the action can't find the default branch to create the gh-pages branch from.
+
+**Solution:** Make sure your repository has a default branch (usually `main` or `master`) and the action has `contents: write` permission.
