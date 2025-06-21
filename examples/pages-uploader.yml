@@ -1,4 +1,4 @@
-name: Badge Uploader Only
+name: Pages Uploader
 on:
   push:
     branches: [main]
@@ -7,7 +7,7 @@ permissions:
   contents: write # Required for GitHub Pages upload
 
 jobs:
-  upload-badges:
+  upload-to-pages:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,8 +25,8 @@ jobs:
       - name: Run tests with coverage
         run: npm test
 
-      # Upload badges to GitHub Pages (generates badges automatically)
-      - name: Upload Badges to GitHub Pages
+      # Upload to GitHub Pages (generates badges automatically)
+      - name: Upload to GitHub Pages
         uses: ./actions/badge-uploader
         with:
           coverage-file: "coverage/coverage-summary.json"

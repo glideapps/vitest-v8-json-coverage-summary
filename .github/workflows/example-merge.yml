@@ -27,17 +27,15 @@ jobs:
 
       # Generate badges
       - name: Generate Badges
-        uses: ./
+        uses: ./actions/badge-generator
         with:
-          action: "badge-generator-action.yml"
           coverage-file: "coverage/coverage-summary.json"
           badges-dir: "badges"
 
       # Upload badges to GitHub Pages
       - name: Upload Badges to GitHub Pages
-        uses: ./
+        uses: ./actions/badge-uploader
         with:
-          action: "badge-upload-action.yml"
           badges-dir: "badges"
           pages-branch: "gh-pages"
           pages-badges-dir: "badges"
