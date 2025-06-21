@@ -28,7 +28,7 @@ jobs:
 
       # Coverage reporting (runs on PRs and main)
       - name: Report Coverage
-        uses: glideapps/vitest-v8-json-coverage-summary/actions/coverage-reporter@v0.0.0-echo
+        uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
         with:
           coverage-file: "coverage/coverage-summary.json"
           title: "🧪 Test Coverage Report"
@@ -45,16 +45,27 @@ jobs:
         with:
           fetch-depth: 0 # Needed for git operations
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm test
+
       # Generate badges
       - name: Generate Badges
-        uses: glideapps/vitest-v8-json-coverage-summary/actions/badge-generator@v0.0.0-echo
+        uses: ./actions/badge-generator
         with:
           coverage-file: "coverage/coverage-summary.json"
           badges-dir: "badges"
 
       # Upload badges to GitHub Pages
       - name: Upload Badges to GitHub Pages
-        uses: glideapps/vitest-v8-json-coverage-summary/actions/badge-uploader@v0.0.0-echo
+        uses: ./actions/badge-uploader
         with:
           badges-dir: "badges"
           pages-branch: "gh-pages"

@@ -28,11 +28,11 @@ jobs:
         run: npm test
 
       - name: Report Coverage
-        uses: glideapps/vitest-v8-json-coverage-summary@v1
+        uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
         with:
           coverage-file: "coverage/coverage-summary.json"
           title: "🧪 Test Coverage Report"
           show-files: "true"
           coverage-threshold: "80"
-          make-badges: "true"
-          upload-badges-to-pages: "true"
+
+      # Note: Badge generation and upload functionality is not yet available in this action

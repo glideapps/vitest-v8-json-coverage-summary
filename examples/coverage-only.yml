@@ -25,7 +25,7 @@ jobs:
 
       # Only coverage reporting - no badges
       - name: Report Coverage
-        uses: glideapps/vitest-v8-json-coverage-summary/actions/coverage-reporter@v0.0.0-echo
+        uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
         with:
           coverage-file: "coverage/coverage-summary.json"
           title: "🧪 Test Coverage Report"

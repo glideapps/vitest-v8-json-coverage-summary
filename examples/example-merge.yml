@@ -1,4 +1,4 @@
-name: Badge Uploader Only
+name: Example Merge Workflow
 on:
   push:
     branches: [main]
@@ -7,7 +7,7 @@ permissions:
   contents: write # Required for GitHub Pages upload
 
 jobs:
-  upload-badges:
+  badges:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,12 +25,20 @@ jobs:
       - name: Run tests with coverage
         run: npm test
 
-      # Upload badges to GitHub Pages (generates badges automatically)
-      - name: Upload Badges to GitHub Pages
-        uses: ./actions/badge-uploader
+      # Generate badges
+      - name: Generate Badges
+        uses: ./
         with:
+          action: "badge-generator-action.yml"
           coverage-file: "coverage/coverage-summary.json"
+          badges-dir: "badges"
+
+      # Upload badges to GitHub Pages
+      - name: Upload Badges to GitHub Pages
+        uses: ./
+        with:
+          action: "badge-upload-action.yml"
           badges-dir: "badges"
           pages-branch: "gh-pages"
           pages-badges-dir: "badges"
-          generate-badges: "true"
+          generate-badges: "false" # Use existing badges

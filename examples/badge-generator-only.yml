@@ -20,9 +20,9 @@ jobs:
       - name: Run tests with coverage
         run: npm test
 
-      # Only generate badges - no upload
+      # Generate badges
       - name: Generate Badges
-        uses: glideapps/vitest-v8-json-coverage-summary/actions/badge-generator@v0.0.0-echo
+        uses: ./actions/badge-generator
         with:
           coverage-file: "coverage/coverage-summary.json"
           badges-dir: "badges"

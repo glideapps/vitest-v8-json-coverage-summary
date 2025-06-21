@@ -35,40 +35,5 @@ jobs:
           show-files: "true"
           coverage-threshold: "80"
 
-  # Badge generation and upload (only runs on main branch)
-  badges:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    needs: coverage
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Needed for git operations
-
-      # Option 1: Use the badge upload action (generates badges automatically)
-      - name: Upload Badges to GitHub Pages
-        uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
-        with:
-          action: "badge-upload-action.yml"
-          coverage-file: "coverage/coverage-summary.json"
-          badges-dir: "badges"
-          pages-branch: "gh-pages"
-          pages-badges-dir: "badges"
-          generate-badges: "true"
-
-      # Option 2: Use separate actions for more control
-      # - name: Generate Badges
-      #   uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
-      #   with:
-      #     action: "badge-generator-action.yml"
-      #     coverage-file: "coverage/coverage-summary.json"
-      #     badges-dir: "badges"
-      #
-      # - name: Upload Badges to GitHub Pages
-      #   uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
-      #   with:
-      #     action: "badge-upload-action.yml"
-      #     badges-dir: "badges"
-      #     pages-branch: "gh-pages"
-      #     pages-badges-dir: "badges"
-      #     generate-badges: "false"
+  # Note: Badge generation and upload functionality is not yet available in this action
+  # This example will be updated when badge functionality is properly implemented
