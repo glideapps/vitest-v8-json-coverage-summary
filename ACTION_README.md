@@ -1,6 +1,6 @@
 # Vitest Coverage Reporter GitHub Action
 
-A GitHub Action that automatically creates beautiful coverage reports in pull requests using vitest coverage data.
+A GitHub Action that automatically creates beautiful coverage reports in pull requests using vitest coverage data. Built with pure YAML and shell commands for maximum reliability.
 
 ## Features
 
@@ -9,7 +9,9 @@ A GitHub Action that automatically creates beautiful coverage reports in pull re
 - 📁 **File-level Details**: Option to show individual file coverage breakdowns
 - 🔄 **Smart Updates**: Updates existing comments instead of creating duplicates
 - 🎨 **Visual Indicators**: Uses emojis to quickly identify coverage status
-- ⚡ **Lightweight**: Fast execution with minimal dependencies
+- 🏷️ **Coverage Badges**: Generates shields.io compatible badges locally
+- ⚡ **Lightweight**: Pure YAML and shell commands, no JavaScript complexity
+- 🔧 **Reliable**: No module system issues or permission headaches
 
 ## Usage
 
@@ -45,16 +47,19 @@ jobs:
         uses: glideapps/vitest-v8-json-coverage-summary@v1
 ```
 
-### Advanced Usage
+### Advanced Usage with Badge Upload
 
 ```yaml
-name: Coverage Report
+name: Coverage Report with Badge Upload
 on:
   pull_request:
+    branches: [main]
+  push:
     branches: [main]
 
 permissions:
   pull-requests: write
+  contents: write # Required for GitHub Pages upload
 
 jobs:
   coverage:
@@ -73,6 +78,7 @@ jobs:
       - name: Run tests with coverage
         run: npm test
 
+      # Coverage reporting (runs on PRs and main)
       - name: Report Coverage
         uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
         with:
@@ -80,17 +86,48 @@ jobs:
           title: "🧪 Test Coverage Report"
           show-files: "true"
           coverage-threshold: "90"
+          make-badges: "true"
+
+  # Badge upload (only runs on main branch)
+  upload-badges:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: coverage
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for git operations
+
+      - name: Upload Badges to GitHub Pages
+        uses: glideapps/vitest-v8-json-coverage-summary@v0.0.0-echo
+        with:
+          action: "badge-upload-action.yml"
+          badges-dir: "badges"
+          pages-branch: "gh-pages"
+          pages-badges-dir: "badges"
 ```
 
 ## Inputs
 
-| Input                | Description                                             | Required | Default                          |
-| -------------------- | ------------------------------------------------------- | -------- | -------------------------------- |
-| `coverage-file`      | Path to the coverage summary JSON file                  | No       | `coverage/coverage-summary.json` |
-| `token`              | GitHub token for creating comments                      | No       | `${{ github.token }}`            |
-| `title`              | Title for the coverage report comment                   | No       | `📊 Coverage Report`             |
-| `show-files`         | Whether to show individual file coverage details        | No       | `true`                           |
-| `coverage-threshold` | Minimum coverage percentage to consider as good (0-100) | No       | `80`                             |
+| Input                | Description                                               | Required | Default                          |
+| -------------------- | --------------------------------------------------------- | -------- | -------------------------------- |
+| `coverage-file`      | Path to the coverage summary JSON file                    | No       | `coverage/coverage-summary.json` |
+| `token`              | GitHub token for creating comments                        | No       | `${{ github.token }}`            |
+| `title`              | Title for the coverage report comment                     | No       | `📊 Coverage Report`             |
+| `show-files`         | Whether to show individual file coverage details          | No       | `true`                           |
+| `coverage-threshold` | Minimum coverage percentage to consider as good (0-100)   | No       | `80`                             |
+| `make-badges`        | Whether to generate coverage badges in a badges directory | No       | `true`                           |
+
+## Badge Upload Action
+
+For uploading badges to GitHub Pages, use the separate `badge-upload-action.yml`:
+
+| Input              | Description                                       | Required | Default                            |
+| ------------------ | ------------------------------------------------- | -------- | ---------------------------------- |
+| `badges-dir`       | Directory containing the badges to upload         | No       | `badges`                           |
+| `pages-branch`     | Branch to upload badges to for GitHub Pages       | No       | `gh-pages`                         |
+| `pages-badges-dir` | Directory within the pages branch to store badges | No       | `badges`                           |
+| `commit-message`   | Commit message for badge updates                  | No       | `Update coverage badges [skip ci]` |
 
 ## Coverage File Format
 
@@ -182,3 +219,98 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Coverage Badges
+
+When `make-badges` is enabled (default: `true`), the action creates a `badges` directory with shields.io compatible JSON files:
+
+### Generated Badges
+
+- `badges/coverage.json` - Overall coverage percentage
+- `badges/statements.json` - Statement coverage
+- `badges/branches.json` - Branch coverage
+- `badges/functions.json` - Function coverage
+- `badges/lines.json` - Line coverage
+
+### Badge Colors
+
+- 🟢 **Bright Green**: 90% or higher
+- 🟢 **Green**: 80-89%
+- 🟡 **Yellow**: 70-79%
+- 🟠 **Orange**: 60-69%
+- 🔴 **Red**: Below 60%
+
+### Using Badges with GitHub Pages
+
+The badge upload action automatically uploads badges to your GitHub Pages branch.
+
+**Automatic Setup:**
+
+- Creates the `gh-pages` branch if it doesn't exist
+- Uploads badges to the specified directory
+- Commits and pushes changes automatically
+
+**Enable GitHub Pages** in your repository settings:
+
+1. Go to Settings → Pages
+2. Set source to "Deploy from a branch"
+3. Select your `gh-pages` branch (or the branch specified in `pages-branch`)
+4. Set folder to `/ (root)` or `/badges` depending on your preference
+
+**Badge URLs** will be available at:
+
+```
+https://yourusername.github.io/yourrepo/badges/coverage.json
+https://yourusername.github.io/yourrepo/badges/statements.json
+https://yourusername.github.io/yourrepo/badges/branches.json
+https://yourusername.github.io/yourrepo/badges/functions.json
+https://yourusername.github.io/yourrepo/badges/lines.json
+```
+
+**Use in your README.md:**
+
+```markdown
+![Coverage](https://yourusername.github.io/yourrepo/badges/coverage.json)
+![Statements](https://yourusername.github.io/yourrepo/badges/statements.json)
+![Branches](https://yourusername.github.io/yourrepo/badges/branches.json)
+```
+
+### Required Permissions
+
+For basic functionality, your workflow needs:
+
+```yaml
+permissions:
+  pull-requests: write # For creating/updating PR comments
+```
+
+For GitHub Pages deployment, add:
+
+```yaml
+permissions:
+  contents: write # For uploading to GitHub Pages
+```
+
+## How It Works
+
+The action is built as a **composite action** using pure YAML and shell commands:
+
+1. **File Validation** - Checks if coverage file exists
+2. **Badge Generation** - Creates shields.io compatible JSON badges
+3. **Report Generation** - Builds formatted markdown coverage report
+4. **PR Comment** - Posts report to pull request using GitHub API
+
+### Shell Tools Used
+
+- **`jq`** - JSON parsing and data extraction
+- **`bc`** - Mathematical calculations
+- **`curl`** - GitHub API communication
+- **`bash`** - Scripting and logic
+
+### No More JavaScript Headaches
+
+- ✅ No ESM/CJS confusion
+- ✅ No module system warnings
+- ✅ No permission issues with git operations
+- ✅ No complex dependency management
+- ✅ No build/compilation steps

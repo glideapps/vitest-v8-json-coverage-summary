@@ -1,0 +1,36 @@
+name: Badge Generator Only
+on:
+  push:
+    branches: [main]
+
+jobs:
+  badges:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm test
+
+      # Only generate badges - no upload
+      - name: Generate Badges
+        uses: glideapps/vitest-v8-json-coverage-summary/actions/badge-generator@v0.0.0-echo
+        with:
+          coverage-file: "coverage/coverage-summary.json"
+          badges-dir: "badges"
+
+      # Optional: Upload badges as artifacts
+      - name: Upload badges as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-badges
+          path: badges/
+          retention-days: 30

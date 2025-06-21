@@ -1,0 +1,85 @@
+name: "Coverage Badge Generator"
+description: "Generates coverage badges from vitest coverage data"
+author: "Glide Apps"
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  coverage-file:
+    description: "Path to the coverage summary JSON file"
+    required: false
+    default: "coverage/coverage-summary.json"
+  badges-dir:
+    description: "Directory to output the generated badges"
+    required: false
+    default: "badges"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check if coverage file exists
+      shell: bash
+      run: |
+        if [ ! -f "${{ inputs.coverage-file }}" ]; then
+          echo "::error::Coverage file not found at ${{ inputs.coverage-file }}. Did you forget to add the reporter in your vitest.config.js?"
+          exit 1
+        fi
+
+    - name: Generate badges
+      shell: bash
+      run: |
+        # Parse coverage data
+        COVERAGE_DATA=$(cat "${{ inputs.coverage-file }}")
+
+        # Extract metrics
+        STATEMENTS=$(echo "$COVERAGE_DATA" | jq -r '.summary.statements')
+        BRANCHES=$(echo "$COVERAGE_DATA" | jq -r '.summary.branches')
+        FUNCTIONS=$(echo "$COVERAGE_DATA" | jq -r '.summary.functions')
+        LINES=$(echo "$COVERAGE_DATA" | jq -r '.summary.lines')
+
+        # Calculate average
+        AVG=$(echo "scale=1; ($STATEMENTS + $BRANCHES + $FUNCTIONS + $LINES) / 4" | bc)
+
+        # Create badges directory
+        mkdir -p ${{ inputs.badges-dir }}
+
+        # Determine badge colors
+        get_color() {
+          local coverage=$1
+          if (( $(echo "$coverage >= 90" | bc -l) )); then
+            echo "brightgreen"
+          elif (( $(echo "$coverage >= 80" | bc -l) )); then
+            echo "green"
+          elif (( $(echo "$coverage >= 70" | bc -l) )); then
+            echo "yellow"
+          elif (( $(echo "$coverage >= 60" | bc -l) )); then
+            echo "orange"
+          else
+            echo "red"
+          fi
+        }
+
+        # Generate overall coverage badge
+        COVERAGE_COLOR=$(get_color $AVG)
+        echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"$AVG%\",\"color\":\"$COVERAGE_COLOR\"}" > ${{ inputs.badges-dir }}/coverage.json
+
+        # Generate individual metric badges
+        STATEMENTS_COLOR=$(get_color $STATEMENTS)
+        echo "{\"schemaVersion\":1,\"label\":\"statements\",\"message\":\"$STATEMENTS%\",\"color\":\"$STATEMENTS_COLOR\"}" > ${{ inputs.badges-dir }}/statements.json
+
+        BRANCHES_COLOR=$(get_color $BRANCHES)
+        echo "{\"schemaVersion\":1,\"label\":\"branches\",\"message\":\"$BRANCHES%\",\"color\":\"$BRANCHES_COLOR\"}" > ${{ inputs.badges-dir }}/branches.json
+
+        FUNCTIONS_COLOR=$(get_color $FUNCTIONS)
+        echo "{\"schemaVersion\":1,\"label\":\"functions\",\"message\":\"$FUNCTIONS%\",\"color\":\"$FUNCTIONS_COLOR\"}" > ${{ inputs.badges-dir }}/functions.json
+
+        LINES_COLOR=$(get_color $LINES)
+        echo "{\"schemaVersion\":1,\"label\":\"lines\",\"message\":\"$LINES%\",\"color\":\"$LINES_COLOR\"}" > ${{ inputs.badges-dir }}/lines.json
+
+        echo "✅ Generated badges in ${{ inputs.badges-dir }}/:"
+        echo "  - coverage.json: $AVG% ($COVERAGE_COLOR)"
+        echo "  - statements.json: $STATEMENTS% ($STATEMENTS_COLOR)"
+        echo "  - branches.json: $BRANCHES% ($BRANCHES_COLOR)"
+        echo "  - functions.json: $FUNCTIONS% ($FUNCTIONS_COLOR)"
+        echo "  - lines.json: $LINES% ($LINES_COLOR)"
