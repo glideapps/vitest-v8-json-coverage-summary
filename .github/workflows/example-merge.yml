@@ -1,0 +1,44 @@
+name: Example Merge Workflow
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write # Required for GitHub Pages upload
+
+jobs:
+  badges:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for git operations
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm test
+
+      # Generate badges
+      - name: Generate Badges
+        uses: ./
+        with:
+          action: "badge-generator-action.yml"
+          coverage-file: "coverage/coverage-summary.json"
+          badges-dir: "badges"
+
+      # Upload badges to GitHub Pages
+      - name: Upload Badges to GitHub Pages
+        uses: ./
+        with:
+          action: "badge-upload-action.yml"
+          badges-dir: "badges"
+          pages-branch: "gh-pages"
+          pages-badges-dir: "badges"
+          generate-badges: "false" # Use existing badges
