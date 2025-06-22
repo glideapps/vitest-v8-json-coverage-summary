@@ -40,16 +40,18 @@ runs:
         if [ ! -d "${{ inputs.badges-dir }}" ] || [ ! -f "${{ inputs.badges-dir }}/coverage.json" ]; then
           if [ "${{ inputs.generate-badges }}" = "true" ]; then
             echo "⚠️ No badges found. Will generate them from coverage data."
+            echo "GENERATE_BADGES=true" >> $GITHUB_ENV
           else
             echo "::error::No badges found in ${{ inputs.badges-dir }}. Set generate-badges=true or run the badge generator first."
             exit 1
           fi
         else
           echo "✅ Found existing badges in ${{ inputs.badges-dir }}/"
+          echo "GENERATE_BADGES=false" >> $GITHUB_ENV
         fi
 
     - name: Generate badges if needed
-      if: inputs.generate-badges == 'true' && (inputs.badges-dir == 'badges' && !fileExists('badges/coverage.json'))
+      if: env.GENERATE_BADGES == 'true'
       shell: bash
       run: |
         # Parse coverage data
